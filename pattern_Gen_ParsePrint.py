@@ -69,7 +69,7 @@ def TraverseParseElement(objMap, structName, parseEL, BatchParser, PulseParser, 
         print "=========================>",Item
         batchArgs=["", ""]; pulseArgs=["", ""]; printerArgs=["", ""];
         TraverseParseElement(objMap, structName, Item, batchArgs, pulseArgs, printerArgs, indent2)
-        batch0="    func var bool: parseCoFactual_"+str(tagModifier)+"(rPtr streamSpan:  cursor, rPtr "+structName+": ITEM)<%{\n"
+        batch0="    func var bool: parseCoFactual_"+str(tagModifier)+"(rPtr streamSpan:  cursor, rPtr "+structName+": ITEM, var bool: parent )<%{\n"
         batch0+= indent+"if(" + batchArgs[1] + ") {"+actionStr+"} else {MARK_ERROR; return false;}\n"
         batchArgs[0]+="\n"+batch0+"    }; %>\n"
         batchArgs[1]="parseCoFactual_"+str(tagModifier)+"(cursor, ITEM)"
@@ -83,7 +83,7 @@ def TraverseParseElement(objMap, structName, parseEL, BatchParser, PulseParser, 
         print1=""
         batch1=""
         batch0="";
-        batch0+="    func var bool: parseSequence_"+tagModifierS+"(rPtr streamSpan:  cursor, rPtr "+structName+": ITEM ) <%{\n"
+        batch0+="    func var bool: parseSequence_"+tagModifierS+"(rPtr streamSpan:  cursor, rPtr "+structName+": ITEM, var bool: parent  ) <%{\n"
         for firstItem in parseEL[2]:
             batch0 += indent+"if(!"
             batchArgs=["", ""]; pulseArgs=["", ""]; printerArgs=["", ""];
@@ -104,7 +104,7 @@ def TraverseParseElement(objMap, structName, parseEL, BatchParser, PulseParser, 
         tagModifierS=parseEL[1]
         print1=""
         batch1=""
-        batch0="    func var bool: parseAltList_"+tagModifierS+"(rPtr streamSpan:  cursor, rPtr "+structName+": ITEM )<%{\n"
+        batch0="    func var bool: parseAltList_"+tagModifierS+"(rPtr streamSpan:  cursor, rPtr "+structName+": ITEM, var bool: parent )<%{\n"
         for firstItem in parseEL[2]:
             batch0 += indent+"if("
             batchArgs=["", ""]; pulseArgs=["", ""]; printerArgs=["", ""];
@@ -207,7 +207,7 @@ def apply(objects, tags, parserSpecTag, startSymbol):
             #progSpec.CreatePointerItems([structsSpec, structNames ], objName)
 
             BatchParserUtils+=batchArgs[0]
-            BatchParser+="\n    func rPtr "+objName + ": parse_"+objName+"(rPtr streamSpan:  cursor, "+"rPtr "+objName+": ITEM ) <%{\n        if(ITEM){reset_"+objName+"_forParsing(ITEM);} else {ITEM=new "+objName+"();}\n        if("+batchArgs[1]+") return ITEM; else return 0;;\n    }; %>\n"
+            BatchParser+="\n    func rPtr "+objName + ": parse_"+objName+"(rPtr streamSpan:  cursor, "+"rPtr "+objName+": ITEM, var bool: parent  ) <%{\n        if(ITEM){reset_"+objName+"_forParsing(ITEM);} else {ITEM=new "+objName+"();}\n        if("+batchArgs[1]+") return ITEM; else return 0;;\n    }; %>\n"
             BatchParser+="\n    func var void: reset_" + objName + "_forParsing(rPtr "+objName+": ITEM)<%{}; %>\n"
 
             PrinterFunc = '    func var string: printToString() <%{\n        string S="";\n' + printArgs[1] + "        return S;\n    };%>\n"

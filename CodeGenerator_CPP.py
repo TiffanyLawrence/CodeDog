@@ -176,6 +176,7 @@ def processAction(action, indent):
     elif (typeOfAction =='funcCall'):
         calledFunc = action['calledFunc']
         parameters = ",".join(action['parameters'])
+
         #print "funcCall: ", calledFunc, parameters
         actionText = indent + calledFunc + " (" + parameters  + ");\n"
     elif (typeOfAction =='actionSeq'):
@@ -240,14 +241,16 @@ def generate_constructor(objects, objectName, tags):
     return constructCode
 
 def processOtherFields(objects, objectName, tags, indent):
-    print "        Coding fields for", objectName
     globalFuncs=''
     funcDefCode=''
     structCode=""
     ObjectDef = objects[0][objectName]
     for field in ObjectDef['fields']:
-        #print field
         kindOfField=field['kindOfField']
+        print "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        print field
+        print kindOfField
+        ####################################################
         if(kindOfField=='flag' or kindOfField=='mode'): continue
         fieldType=field['fieldType']
         fieldName=field['fieldName']
@@ -256,7 +259,7 @@ def processOtherFields(objects, objectName, tags, indent):
         typeDefName = progSpec.createTypedefName(fieldType)
         if kindOfField != 'flags':
             print "        ->", kindOfField, fieldName
-
+        ############################################3
         if kindOfField=='var':
             registerType(objectName, fieldName, convertedType, "")
             structCode += indent + convertedType + ' ' + fieldName +";\n";
@@ -274,10 +277,18 @@ def processOtherFields(objects, objectName, tags, indent):
             structCode += indent + typeDefName +' '+ fieldName +";\n";
         #################################################################
         elif kindOfField=='func':
+            #'kindOfField':'func', 'funcText':funcBody, 'fieldType':returnType, 'fieldName':funcName, 'argList':argList, 'funcTextVerbatim':funcTextVerbatim
+            fieldType=field['fieldType']
+            fieldName=field['fieldName']
+            argListString = ''
+            print "FUNC........FUNC........FUNC........FUNC........"
+            print "funcText", fieldType
+            print "fieldName", fieldName
             if(fieldType=='none'): convertedType=''
             else:
-                #print convertedType
-                convertedType+=''
+                print "convertedType", convertedType
+                convertedType+=convertType(fieldType)
+                print "convertedType", convertedType
             #get verbatim
             if field['funcTextVerbatim']:
                 funcText=field['funcTextVerbatim']
@@ -287,7 +298,6 @@ def processOtherFields(objects, objectName, tags, indent):
             else: 
                 print "error in processOtherFields: no funcText or funcTextVerbatim found"
                 exit(1)
-            #print "FUNCTEXT:",funcText
         ###########################################################
             if(objectName=='MAIN'):
                 if fieldName=='main':
@@ -309,9 +319,11 @@ def processOtherFields(objects, objectName, tags, indent):
                     argListText=""
                     count=0
                     for arg in argList:
+                        print 'ARG:', arg[0][0], arg[0][1]
                         if(count>0): argListText+=", "
                         count+=1
-                        argListText+= convertType(arg.typeSpecKind +' '+ arg.varName)
+                        
+                        argListText+= convertType(arg[0][0]) +' '+ arg[0][1]
                 #print "FUNCTION:",convertedType, fieldName, '(', argListText, ') ', funcText
                 if(fieldType[0] != '<%'):
                     registerType(objectName, fieldName, convertedType, typeDefName)

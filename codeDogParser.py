@@ -305,13 +305,13 @@ def extractFieldDefs(localProgSpec, localObjectName, fieldResults):
         elif fieldResult.funcIndicator:
             # extract function into an array
             [returnType, funcName, argList, tagList, funcBodyOut, funcTextVerbatim] = extractFuncDef( localObjectName, fieldResult)
-            #print "FUNCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+            print "FUNCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
             #print returnType
             #print funcName
-            #print argList
+            print argList
             #print tagList
             #print funcBodyOut
-            #print "FUNCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+            print "FUNCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
             progSpec.addFunc(localProgSpec, localObjectName, returnType, funcName, argList, tagList, funcBodyOut, funcTextVerbatim)
         elif (fieldResult.varName):
             thisTypeSpec = fieldResult.typeSpec
