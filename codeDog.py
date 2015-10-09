@@ -7,6 +7,7 @@ import pattern_Write_Main
 import pattern_Gen_ParsePrint
 import pattern_Gen_Eventhandler
 import pattern_BigNums
+import pattern_Show
 #import pattern_Gen_GUI
 
 import CodeGenerator_CPP
@@ -57,6 +58,7 @@ def ScanAndApplyPatterns(objects, tags):
             elif pattName=='Gen_Eventhandler': pattern_Gen_Eventhandler.apply(objects, tags)
             elif pattName=='writeParser': pattern_Gen_ParsePrint.apply(objects, tags, patternArgs[0], patternArgs[1])
             elif pattName=='useBigNums': pattern_BigNums.apply(tags)
+            elif pattName=='writeShow': pattern_Show.apply(objects, tags, patternArgs[0])
 
 def setFeatureNeeded(tags, featureID, objMap):
     tags[featureID]=objMap

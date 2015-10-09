@@ -37,14 +37,14 @@ buildDefList = tagDefList("buildDefList")
 buildSpec = Group(buildID + Literal(":").suppress() + buildDefList + ";")("buildSpec")
 buildSpecList = Group(OneOrMore(buildSpec))("buildSpecList")
 #######################################
-verbatim = Group(Literal(r"<%") + SkipTo(r"%>", include=True))
+verbatim = Group(Literal(r"<%") + SkipTo(r"%>", include=True))('verbatim')
 verbatim.setParseAction( reportParserPlace)
 modeSpec = Group(Keyword("mode")("modeIndicator") + ":" + CID ("modeName")+ "[" + CIDList("modeList") + "]")("modeSpec")
 varName = CID ("varName")
 typeSpec = Forward()
 typeSpec <<= Group((Keyword("var")| Keyword("sPtr") | Keyword("uPtr") | Keyword("rPtr")) + (typeSpec | varType))("typeSpec")
 varSpec = Group(typeSpec + Literal(":").suppress() + varName)("varSpec")
-argList =  verbatim | Group(Optional(delimitedList(Group(varSpec))))("argList")
+argList =  (verbatim | Group(Optional(delimitedList(Group(varSpec)))))("argList")
 
 constName = CID("constName")
 constValue = value("constValue")
@@ -77,7 +77,7 @@ optionalTag = Literal(":")("optionalTag")
 funcName = CID("funcName")
 funcBody = (actionSeq | funcBodyVerbatim)("funcBody")
 funcSpec = Group(Keyword("func")("funcIndicator") + returnType + ":" + CID("funcName") + "(" + argList + ")" + Optional(optionalTag + tagDefList) + funcBody)("funcSpec")
-#funcSpec.setParseAction( reportParserPlace)
+funcSpec.setParseAction( reportParserPlace)
 fieldDef = (flagDef | modeSpec | varSpec | constSpec | funcSpec)("fieldDef")
 objectName = CID("objectName")
 #########################################
@@ -104,20 +104,20 @@ def extractTagDefs(tagResults):
         tagVal = tagSpec.tagValue
         if ((not isinstance(tagVal, basestring)) and len(tagVal)>=2):
             if(tagVal[0]=='['):
-                print "LIST OF VALUES"
+                #print "LIST OF VALUES"
                 tagValues=[]
                 for multiVal in tagVal[1]:
                     tagValues.append(multiVal[0])
-                print tagValues
+                #print tagValues
 
             elif(tagVal[0]=='{'):
-                print "MAP OF VALUES"
+                #print "MAP OF VALUES"
                 tagValues=extractTagDefs(tagVal[1])
             tagVal=tagValues
         # Remove quotes
         elif (len(tagVal)>=2 and (tagVal[0] == '"' or tagVal[0] == "'") and (tagVal[0]==tagVal[-1])):
             tagVal = tagVal[1:-1]
-        print tagSpec.tagID, " is ", tagVal
+        #print tagSpec.tagID, " is ", tagVal
         localTagStore[tagSpec.tagID] = tagVal
     return localTagStore
 
@@ -186,7 +186,7 @@ def extractActItem(funcName, actionItem):
         RHS = actionItem.rValue
         LHS = actionItem.lValue
         assignTag = ''
-        print "ASSIGN...ASSIGN...ASSIGN...ASSIGN...ASSIGN...ASSIGN: ", RHS, LHS
+        #print "ASSIGN...ASSIGN...ASSIGN...ASSIGN...ASSIGN...ASSIGN: ", RHS, LHS
         if (actionItem.assignTag):
             assignTag = actionItem.assignTag
         thisActionItem = {'typeOfAction':"assign", 'LHS':LHS, 'RHS':RHS, 'assignTag':assignTag}
@@ -261,7 +261,10 @@ def extractFuncDef(localObjectName, localFieldResults):
         returnType = localFieldResults.returnType
     #else: print 'Bad return type', localFieldResults.returnType[1]; exit(1);
     funcName = localFieldResults.funcName
-    argList = localFieldResults.argList
+    if localFieldResults.argList.verbatim:
+        argList = localFieldResults.argList.verbatim
+    else: 
+        argList = localFieldResults.argList
     funcBodyIn = localFieldResults.funcBody
     #print "FFFFFFFFFFFFFFFFFFFFFFFFFextractFuncDef:"
     #print "returnType: ", returnType
@@ -283,7 +286,7 @@ def extractFieldDefs(localProgSpec, localObjectName, fieldResults):
 
         fieldTag = fieldResult[0]
        # varType =fieldResult.varType
-        if(not isinstance(fieldTag, basestring)):
+        if(not isinstance(fieldTag, basestring)):       # checks if it's not a string
             varType=fieldTag[1]
             fieldTag=fieldTag[0]
         if (fieldResult.flagIndicator):
@@ -305,13 +308,13 @@ def extractFieldDefs(localProgSpec, localObjectName, fieldResults):
         elif fieldResult.funcIndicator:
             # extract function into an array
             [returnType, funcName, argList, tagList, funcBodyOut, funcTextVerbatim] = extractFuncDef( localObjectName, fieldResult)
-            print "FUNCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+            #print "FUNCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
             #print returnType
             #print funcName
-            print argList
+            #print argList
             #print tagList
             #print funcBodyOut
-            print "FUNCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+            #print "FUNCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
             progSpec.addFunc(localProgSpec, localObjectName, returnType, funcName, argList, tagList, funcBodyOut, funcTextVerbatim)
         elif (fieldResult.varName):
             thisTypeSpec = fieldResult.typeSpec

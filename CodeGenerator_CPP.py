@@ -11,7 +11,7 @@ def bitsNeeded(n):
 
 
 def processFlagAndModeFields(objects, objectName, tags):
-    print "\n        Coding flags and modes for:", objectName
+    #print "\n        Coding flags and modes for:", objectName
     flagsVarNeeded = False
     bitCursor=0
     structEnums="\n\n// *** Code for manipulating "+objectName+' flags and modes ***\n'
@@ -22,12 +22,12 @@ def processFlagAndModeFields(objects, objectName, tags):
         fieldName=field['fieldName'];
 
         if kindOfField=='flag':
-            print "        ->:", fieldName
+            #print "        ->:", fieldName
             flagsVarNeeded=True
             structEnums += "\nconst int "+fieldName +" = " + hex(1<<bitCursor) +"; \t// Flag: "+fieldName+"\n"
             bitCursor += 1;
         elif kindOfField=='mode':
-            print "        ->:", fieldName, '[]'
+            #print "        ->:", fieldName, '[]'
             structEnums += "\n// For Mode "+fieldName
             flagsVarNeeded=True
             # calculate field and bit position
@@ -82,6 +82,7 @@ def convertType(fieldType):
         elif kindOfField=='uPtr':
             cppType="unique_ptr<"+baseType + '> '
         else: cppType=kindOfField; print "RETURNTYPE:", fieldType
+    #print 'convertType.....convertType.....convertType.....convertType', cppType
     return cppType
 
 def prepareTypeName(typeSpec):
@@ -106,7 +107,7 @@ def stringifyArray(thisExpression):
             thisString += each
         else:
             thisString += stringifyArray(each)
-    print thisString
+    #print thisString
     #thisString = ''.join(thisExpression)
     return thisString
 
@@ -224,7 +225,7 @@ def generate_constructor(objects, objectName, tags):
         fieldHeadType=headType(fieldType)
         convertedType = convertType(fieldType)
         fieldName=field['fieldName']
-        print "$$$$$$$$$$$$$$$$$$$$$$$$$ Constructing:", objectName, fieldName, fieldType, fieldHeadType, convertedType
+        #print "$$$$$$$$$$$$$$$$$$$$$$$$$ Constructing:", objectName, fieldName, fieldType, fieldHeadType, convertedType
         if(fieldHeadType[0:3]=="int" or fieldHeadType[0:4]=="uint" or fieldHeadType[-3:]=="Ptr"):
             constructorArgs += convertedType+" _"+fieldName+"=0,"
             constructorInit += fieldName+"("+" _"+fieldName+"),"
@@ -247,9 +248,9 @@ def processOtherFields(objects, objectName, tags, indent):
     ObjectDef = objects[0][objectName]
     for field in ObjectDef['fields']:
         kindOfField=field['kindOfField']
-        print "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
-        print field
-        print kindOfField
+        #print "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        #print field
+        #print kindOfField
         ####################################################
         if(kindOfField=='flag' or kindOfField=='mode'): continue
         fieldType=field['fieldType']
@@ -286,9 +287,7 @@ def processOtherFields(objects, objectName, tags, indent):
             print "fieldName", fieldName
             if(fieldType=='none'): convertedType=''
             else:
-                print "convertedType", convertedType
-                convertedType+=convertType(fieldType)
-                print "convertedType", convertedType
+                convertedType =convertType(fieldType)
             #get verbatim
             if field['funcTextVerbatim']:
                 funcText=field['funcTextVerbatim']
@@ -303,7 +302,9 @@ def processOtherFields(objects, objectName, tags, indent):
                 if fieldName=='main':
                     funcDefCode += 'int main(int argc, char **argv)' +funcText+"\n\n"
                 else:
+                    print 'field......field.....field.....field', field 
                     argList=field['argList']
+                    print argList
                     if argList[0]=='<%':
                         argListText=argList[1][0]
                     else:
@@ -319,7 +320,7 @@ def processOtherFields(objects, objectName, tags, indent):
                     argListText=""
                     count=0
                     for arg in argList:
-                        print 'ARG:', arg[0][0], arg[0][1]
+                        #print 'ARG:', arg[0][0], arg[0][1]
                         if(count>0): argListText+=", "
                         count+=1
                         
@@ -369,6 +370,7 @@ def generateAllObjectsButMain(objects, tags):
 def processMain(objects, tags):
     print "\n    Generating MAIN..."
     if("MAIN" in objects[1]):
+        
         [structCode, funcCode, globalFuncs]=processOtherFields(objects, "MAIN", tags, '')
         if(funcCode==''): funcCode="// No main() function.\n"
         if(structCode==''): structCode="// No Main Globals.\n"
