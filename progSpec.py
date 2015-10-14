@@ -194,3 +194,9 @@ def getActionTestStrings(objMap, structName, action):
         exit(2)
     return ([leftKind, actionStr, testStr])
 
+def isFieldInObj(objects, tags, baseType):
+	print "isFieldInObj.......isFieldInObj.......isFieldInObj"
+	for field in objects[0]:
+		if (baseType == field):
+			return field
+	return None

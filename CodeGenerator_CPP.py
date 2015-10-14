@@ -282,9 +282,9 @@ def processOtherFields(objects, objectName, tags, indent):
             fieldType=field['fieldType']
             fieldName=field['fieldName']
             argListString = ''
-            print "FUNC........FUNC........FUNC........FUNC........"
-            print "funcText", fieldType
-            print "fieldName", fieldName
+            #print "FUNC........FUNC........FUNC........FUNC........"
+            #print "funcText", fieldType
+            #print "fieldName", fieldName
             if(fieldType=='none'): convertedType=''
             else:
                 convertedType =convertType(fieldType)
@@ -302,9 +302,9 @@ def processOtherFields(objects, objectName, tags, indent):
                 if fieldName=='main':
                     funcDefCode += 'int main(int argc, char **argv)' +funcText+"\n\n"
                 else:
-                    print 'field......field.....field.....field', field 
+                    #print 'field......field.....field.....field', field 
                     argList=field['argList']
-                    print argList
+                    #print argList
                     if argList[0]=='<%':
                         argListText=argList[1][0]
                     else:

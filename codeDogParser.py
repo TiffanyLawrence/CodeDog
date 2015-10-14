@@ -38,7 +38,7 @@ buildSpec = Group(buildID + Literal(":").suppress() + buildDefList + ";")("build
 buildSpecList = Group(OneOrMore(buildSpec))("buildSpecList")
 #######################################
 verbatim = Group(Literal(r"<%") + SkipTo(r"%>", include=True))('verbatim')
-verbatim.setParseAction( reportParserPlace)
+#verbatim.setParseAction( reportParserPlace)
 modeSpec = Group(Keyword("mode")("modeIndicator") + ":" + CID ("modeName")+ "[" + CIDList("modeList") + "]")("modeSpec")
 varName = CID ("varName")
 typeSpec = Forward()
@@ -77,7 +77,7 @@ optionalTag = Literal(":")("optionalTag")
 funcName = CID("funcName")
 funcBody = (actionSeq | funcBodyVerbatim)("funcBody")
 funcSpec = Group(Keyword("func")("funcIndicator") + returnType + ":" + CID("funcName") + "(" + argList + ")" + Optional(optionalTag + tagDefList) + funcBody)("funcSpec")
-funcSpec.setParseAction( reportParserPlace)
+#funcSpec.setParseAction( reportParserPlace)
 fieldDef = (flagDef | modeSpec | varSpec | constSpec | funcSpec)("fieldDef")
 objectName = CID("objectName")
 #########################################
@@ -403,11 +403,9 @@ def parseCodeDogString(inputString):
 
 def AddToObjectFromText(spec, objNames, inputStr):
     inputStr = comment_remover(inputStr)
-    print '####################\n',inputStr, "\n######################^\n\n\n"
+    #print '####################\n',inputStr, "\n######################^\n\n\n"
 
     # (map of objects, array of objectNames, string to parse)
     results = objectList.parseString(inputStr, parseAll = True)
-    print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n',results,'%%%%%%%%%%%%%%%%%%%%%%'
+    #print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n',results,'%%%%%%%%%%%%%%%%%%%%%%'
     extractObjectOrPattern(spec, objNames, results[0])
-
-
