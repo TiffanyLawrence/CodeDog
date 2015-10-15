@@ -421,7 +421,7 @@ def connectLibraries(objects, tags):
 
 def generate(objects, tags):
     print "\nGenerating CPP code...\n"
-    #libInterfacesText=connectLibraries(objects, tags)
+    libInterfacesText=connectLibraries(objects, tags)
     header = makeFileHeader(tags)
     [constsEnums, forwardDecls, structCodeAcc, funcCodeAcc]=generateAllObjectsButMain(objects, tags)
     topBottomStrings = processMain(objects, tags)

@@ -2,10 +2,44 @@
 
 libraries = {
     gmp={
-        useStatus='static'
+        useStatus='notLinked'
         description='Gnu library to provide arithmetic for arbitrarily large integers, floats and fractions.'
         features=[BigNumbers, BigFractions]
         libFiles=[gmp, gmpxx]
         headers=[gmp.h, gmpxx.h]
     }
+    
+    SDL2={
+		useStatus='notLinked'
+        description='Simple Direct-Media Layer: provides a low level access to  audio, keyboard, mouse, joystick, and graphis hardware via OpenGL and Direct3D'
+        features=[2DGraphics]
+        libFiles=[SDL2]
+        headers=[SDL.h]
+        dependencies=[]
+    }
+    
+    SDL_image={useStatus='notLinked'
+        description=''
+        features=[]
+        libFiles=[]
+        headers=[]
+        dependencies=[]}
+    cairo={useStatus='notLinked'
+        description='2D graphics library with support for multiple output devices'
+        features=[]
+        libFiles=[]
+        headers=[cairo.h]
+        dependencies=[]}
+    pango={
+		useStatus='notLinked'
+        description='library for laying out and reandering multi-language text'
+        features=[]
+        libFiles=[libpango-1.0.so]
+        headers=[pango/pangocairo.h, pango/pangoft2.h]
+        dependencies=[]
+    }
+    //sdl sound etc
+    //Glib freetype
+    //pixman
+    //libpng
 }
