@@ -1,4 +1,4 @@
-/-############  Add GUI-Toolkit features using GTK3
+//############  Add GUI-Toolkit features using GTK3
 requirements = [
     [tagOneOf, Platform, [Linux]]
 ]
@@ -22,40 +22,27 @@ initCode = `
     GUI_threads_messagePasser <- threadsMesgPasser()
 `
 
-/-///////////////////////////////  STRUCT CONVERTERS
+/////////////////////////////////  STRUCT CONVERTERS
 struct GUI_rect{me double: x1 me double: y1 me double: x2 me double: y2}
-struct GUI_offset{their GtkAdjustment:GUI_offset}
-struct GUI_item{their GtkWidget: GUI_item}
-struct GUI_Frame{their GtkWidget: GUI_Frame}
-struct GUI_menuBar{their GtkWidget: GUI_menuBar}
-struct GUI_menu{their GtkWidget: GUI_menu}
-struct GUI_menuItem{their GtkWidget: GUI_menuItem}
-struct GUI_canvas{their GtkWidget: GUI_canvas}
-struct GUI_container{their GtkContainer:GUI_container}
-struct GUI_ScrollingWindow{their GtkWidget: GUI_ScrollingWindow}
-struct GUI_VerticalScroller{their GtkWidget: GUI_VerticalScroller}
-struct INK_Image{their cairo_surface_t: INK_Image}      /- How will the ink look?
-struct GUI_callback{me GCallback: GUI_callback}
-struct GUI_Scalar{me int: GUI_Scalar}
-struct GUI_Label{their GtkWidget: GUI_Label}
-struct listWidget{their GtkWidget: listWidget}
-struct GUI_button{their GtkButton: GUI_button}
-struct GUI_XStack{their GtkWidget: GUI_XStack}
-struct GUI_YStack{their GtkWidget: GUI_YStack}
-struct GUI_ComboBox{their GtkWidget: GUI_ComboBox}
-struct GUI_SpinBox{their GtkWidget: GUI_SpinBox}
-struct GUI_Bool{their GtkWidget: GUI_Bool}
-struct GUI_Text{their GtkWidget: GUI_Text}
-struct GUI_Entry{their GtkWidget: GUI_Entry}
-struct GUI_CompleterBox{their GtkWidget: GUI_CompleterBox}
-struct GUI_Completer{their GtkEntryCompletion: GUI_Completer}
-struct GUI_TextViewer{their GtkWidget: GUI_TextViewer}
-struct GUI_MotionEvent{their GdkEventMotion: GUI_MotionEvent}
-struct GUI_ButtonEvent{their GdkEventButton: GUI_ButtonEvent}
-struct GUI_PointerEvent{their GdkEventButton: GUI_PointerEvent}
-struct GDK_KEY_Down{their GtkWidget: GDK_KEY_Down}
-struct GUI_ZStack{their GtkWidget: GUI_ZStack}
-/-///////////////////////////////  WIDGETS
+struct GUI_offset: wraps = GtkAdjustment ownerMe = their{}
+struct GUI_item: wraps = GtkWidget ownerMe = their{}
+struct GUI_Frame: wraps = GtkWidget ownerMe = their{}
+struct GUI_menuBar: wraps = GtkWidget ownerMe = their{}
+struct GUI_menu: wraps = GtkWidget ownerMe = their{}
+struct GUI_menuItem: wraps = GtkWidget ownerMe = their{}
+struct GUI_container: wraps = GtkContainer ownerMe = their{}
+struct GUI_ScrollingWindow: wraps = GtkWidget ownerMe = their{}
+struct GUI_VerticalScroller: wraps = GtkWidget ownerMe = their{}
+struct INK_Image: wraps = cairo_surface_t ownerMe = their{}      // How will the ink look?
+struct GUI_callback: wraps = GCallback ownerMe = their{}
+struct GUI_Scalar: wraps = int{}
+struct listWidget: wraps = GtkWidget ownerMe = their{}
+struct GUI_XStack: wraps = GtkWidget ownerMe = their{}
+struct GUI_YStack: wraps = GtkWidget ownerMe = their{}
+struct GUI_Text: wraps = GtkWidget ownerMe = their{}
+struct GDK_KEY_Down: wraps = GtkWidget ownerMe = their{}
+struct GUI_ZStack: wraps = GtkWidget ownerMe = their{}
+/////////////////////////////////  WIDGETS
 struct GUI_storyBoard{
     their GtkWidget: GUI_storyBoard
     me void: addPane(their GUI_Frame: frame) <- <%!gtk_stack_add_named((GtkStack*)%0, (GtkWidget*)%1, %2)%>
@@ -68,6 +55,9 @@ struct boolWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
 
     me bool: getValue()            <- {dataValue.getValue()}
     void: setValue(me bool: value) <- {dataValue.setValue(value)}
+    me void: clear() <- {
+        dataValue.setValue(true)
+    }
     their GUI_Frame: initWidget(me string: name)  <- <%{
         GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
         dataLabel = gtk_label_new(name.data());
@@ -92,9 +82,15 @@ struct intWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
     me double: climbRate     <- 1
     me int:    decimalPlaces <- 0
 
-    me int: getValue() <- <%!atoi(gtk_entry_get_text((GtkEntry*)%0->dataValue))%>
-    me void: setValue(me int: val) <- <%!gtk_spin_button_set_value ((GtkSpinButton*)%0->box, %1)%>
-
+    me int: getValue() <- <%{
+        return(atoi(gtk_entry_get_text((GtkEntry*)dataValue)));
+    }%>
+    me void: setValue(me int: value) <- <%{
+        gtk_entry_set_text((GtkEntry*)dataValue, to_string(value).data());
+    }%>
+    me void: clear() <- <%{
+        gtk_entry_set_text((GtkEntry*)dataValue, "");
+    }%>
     their GUI_Frame: initWidget(me string: name)  <- <%{
         GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
         dataLabel = gtk_label_new(name.data());
@@ -122,6 +118,7 @@ struct intRangeWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
 
     me int: getValue() <- <%!gtk_spin_button_get_value_as_int ((GtkSpinButton*)%0->dataValue)%>
     me void: setValue(me int: val) <- <%!gtk_spin_button_set_value ((GtkSpinButton*)%0->box, %1)%>
+    //me void: clear() <- <%{}%>
 
     their GUI_Frame: initWidget(me string: name)  <- <%{
         GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -140,8 +137,15 @@ struct stringWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
     their GUI_Label: dataLabel
     their GUI_Text:  dataValue
 
-    me string: getValue() <- <%!gtk_entry_get_text((GtkEntry*)%0->dataValue)%>
-    me void: setValue(me string: val) <- <%!gtk_entry_set_text((GtkEntry*)%0->dataValue, %1.data())%>
+    me string: getValue() <- <%{
+        return(gtk_entry_get_text((GtkEntry*)dataValue));
+    }%>
+    me void: setValue(me string: value) <- <%{
+        gtk_entry_set_text((GtkEntry*)dataValue, value.data());
+    }%>
+    me void: clear() <- <%{
+        gtk_entry_set_text((GtkEntry*)dataValue, "");
+    }%>
     their GUI_Frame: initWidget(me string: name) <- <%{
         GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
         dataLabel = gtk_label_new(name.data());
@@ -178,7 +182,9 @@ struct dateWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
         gtk_calendar_select_day((GtkCalendar*)dataValue, day);
         //cout<<"Set DATE:"<< year << " / " <<  month+1 << " / " << day  <<"\n"<<flush;
     }%>
-
+    me void: clear() <- <%{
+        gtk_calendar_clear_marks ((GtkCalendar*)dataValue);
+    }%>
     their GUI_Frame: initWidget(me string: name)  <- <%{
         GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
         dataLabel = gtk_label_new(name.data());
@@ -199,7 +205,7 @@ struct enumWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
 
     me int: getValue() <- <%!gtk_combo_box_get_active((GtkComboBox*)%0->dataValue)%>
     me void: setValue(me int: val) <- <%!gtk_combo_box_set_active((GtkComboBox*)%0->dataValue, %1)%>
-
+    me void: clear() <- <%{}%>
     their GUI_Frame: initWidget(me string: label, me string[list]: Options)  <- <%{
         options = Options;
         box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -232,11 +238,14 @@ struct DateWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
         return(dateVal)
     }
     void: setValue(me timeValue: setDate) <- {}
+    me void: clear() <- <%{
+        gtk_entry_set_text((GtkEntry*)yearBox, "");
+    }%>
     their GUI_Frame: initialize(me string: label, me timeValue: defaultTime) <- {
-        /-/// YEAR ///////////////////////////////////
+        ///// YEAR ///////////////////////////////////
         their GUI_Label: yearLabel <- makeLabelWidget("Year");
         yearBox <- makeEntryBox("")
-        /-/// MONTH //////////////////////////////////
+        ///// MONTH //////////////////////////////////
         their GUI_Label: monthLabel <- makeLabelWidget("Month");
         monthBox <- makeComboBox()
         me int: count <-0
@@ -244,13 +253,13 @@ struct DateWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
             monthBox.appendStringComboBox(toString(count),monthName, monthArrayAdapter)
             count <- count +1
         }
-        /-/// DAY ////////////////////////////////////
+        ///// DAY ////////////////////////////////////
         their GUI_Label: dayLabel <- makeLabelWidget("Day")
         dayBox <- makeComboBox()
         withEach i in RANGE(1..31){
             dayBox.appendComboBox(i, i, dayArrayAdapter)
         }
-        /-/// RETURN BOX //////////////////////////////
+        ///// RETURN BOX //////////////////////////////
         box <- makeXStack("")
         addToContainer(box, yearLabel)
         addToContainer(box, yearBox)
@@ -269,19 +278,19 @@ struct TimeWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
     me int[list]:       minutes
 
     their GUI_Frame: initialize(me string: label, me timeValue: defaultTime) <- {
-        /-/// HOUR //////////////////////////////////
+        ///// HOUR //////////////////////////////////
         their GUI_Label: hourLabel <- makeLabelWidget("Hour");
         hourBox <- makeComboBox()
         withEach i in RANGE(1..25){
             hourBox.appendComboBox(i, i, hourArrayAdapter)
         }
-        /-/// MINUTE //////////////////////////////////
+        ///// MINUTE //////////////////////////////////
         their GUI_Label: minuteLabel <- makeLabelWidget("Minute");
         minuteBox <- makeComboBox()
         withEach i in RANGE(0..60){
             minuteBox.appendComboBox(i,i, minuteArrayAdapter)
         }
-        /-/// RETURN BOX //////////////////////////////
+        ///// RETURN BOX //////////////////////////////
         box <- makeXStack("")
         addToContainer(box, hourLabel)
         addToContainer(box, hourBox)
@@ -298,12 +307,13 @@ struct TimeWidget: COMMAND_addCallProxy=["widgetData:onChanged"]{
         return(millisecondsSinceMidnight)
     }
     void: setValue() <- {}
+    me void: clear() <- <%{}%>
 }
 struct scrollerWidget{
     their GUI_Frame: layoutArea
     their GtkWidget: scroller
 
-    their GUI_ScrollingWindow: makeScrollerWidget(me GUI_canvas: canvas) <- <%{
+    their GUI_ScrollingWindow: makeScrollerWidget(their GUI_canvas: canvas) <- <%{
         scroller = gtk_scrolled_window_new(0, 0);
         //GtkWidget* layoutArea = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
         //gtk_container_add(GTK_CONTAINER (scroller), layoutArea);
@@ -311,43 +321,43 @@ struct scrollerWidget{
         return(scroller);
     }%>
 }
-/-///////////////////////////////  GUI STRUCTS
-struct GUI_Entry{
+/////////////////////////////////  GUI STRUCTS
+struct GUI_Entry: wraps = GtkWidget ownerMe = their{
     me string: getValue()               <- <%!gtk_entry_get_text((GtkEntry *)%0)%>
     me string: getValueAsInt()          <- <%!atoi(gtk_entry_get_text((GtkEntry *)%0))%>
 }
-struct GUI_CompleterBox{
+struct GUI_CompleterBox: wraps = GtkWidget ownerMe = their{
     me string: getValue()               <- <%!gtk_entry_get_text((GtkEntry *)%0)%>
     me string: getValueAsInt()          <- <%!atoi(gtk_entry_get_text((GtkEntry *)%0))%>
 }
-struct GUI_Completer{
+struct GUI_Completer: wraps = GtkEntryCompletion ownerMe = their{
     me string: getValue()               <- <%!gtk_entry_get_text((GtkEntry *)%0)%>
     me string: getValueAsInt()          <- <%!atoi(gtk_entry_get_text((GtkEntry *)%0))%>
 }
-struct GUI_ComboBox{
+struct GUI_ComboBox: wraps = GtkWidget ownerMe = their{
     me void: appendComboBox(me string: id, me string: label)  <- <%!gtk_combo_box_text_append((GtkComboBoxText*)%0,(gchar*)std::to_string(%1).data(),(gchar*)std::to_string(%2).data())%>
     me void: appendStringComboBox(me string: id, me string: label)  <- <%!gtk_combo_box_text_append((GtkComboBoxText*)%0,(gchar*)%1.data(),(gchar*)%2.data())%>
     me int: comboBoxGetActive()  <- <%!gtk_combo_box_get_active((GtkComboBox *)%0)%>
     me void: setAndroidAdapter() <- <%!%G %>
     me string: getValue()        <- <%!gtk_combo_box_get_active((GtkComboBox*)%0)%>
 }
-struct GUI_SpinBox{
+struct GUI_SpinBox: wraps = GtkWidget ownerMe = their{
     me double: getValue()               <- <%!gtk_spin_button_get_value((GtkSpinButton *)%0)%>
 }
-struct GUI_Bool{
+struct GUI_Bool: wraps = GtkWidget ownerMe = their{
     me string: getValue()               <- <%!gtk_toggle_button_get_active((GtkToggleButton*)%0)%>
     me void: setValue(me int: value)    <- <%!gtk_toggle_button_set_active ((GtkToggleButton*)%0, %1)%>
 }
-struct GUI_Label{
+struct GUI_Label: wraps = GtkWidget ownerMe = their{
     void: setValue(me string: text)     <- <%!gtk_label_set_text (GTK_LABEL(%0), %1.data())%>
 }
-struct GUI_TextViewer{
+struct GUI_TextViewer: wraps = GtkWidget ownerMe = their{
     me void: setEditable(me bool: isEditable)                 <- <%!gtk_text_view_set_editable(GTK_TEXT_VIEW(%0), %1)%>
 }
-struct GUI_button{
+struct GUI_button: wraps = GtkButton ownerMe = their{
     me void: setWidgetActive            <- <%!gtk_widget_set_sensitive ((GtkWidget* )%0, %1)%>
 }
-/-///////////////////////////////  LIST EDITOR WIDGET
+/////////////////////////////////  LIST EDITOR WIDGET
 struct ListWidgetManager{
     their GUI_Frame:         box
     their GUI_Frame:         boxHeader
@@ -469,9 +479,9 @@ struct ListWidgetManager{
     } %>
 }
 
-struct GUI_CompleterList {their GtkListStore: GUI_CompleterList}
+struct GUI_CompleterList: wraps = GtkListStore ownerMe = their{}
 
-/-///////////////////////////////  GLOBAL WIDGET CODE CONVERTERS
+/////////////////////////////////  GLOBAL WIDGET CODE CONVERTERS
 struct GLOBAL{
     me void: setBtnProxy()  <- <%!%Gg_signal_connect(G_OBJECT(%1), %2, G_CALLBACK(%3_%4_CB), %5)%>
     me void: setItmSelectedProxy()  <- <%!%Gg_signal_connect(G_OBJECT(%1), %2, G_CALLBACK(%3_%4_CB), %5)%>
@@ -559,14 +569,14 @@ struct GLOBAL{
         return box;
     }%>
 }
-/-///////////////////////////////  GLOBAL WIDGET FUNCTIONS
+/////////////////////////////////  GLOBAL WIDGET FUNCTIONS
 struct GLOBAL{
     me void: addToContainerAndShowWidget (their GUI_container: parentContainer, their GUI_item: childWidget) <- <%{
         gtk_container_add(parentContainer, childWidget);
         gtk_widget_show(childWidget);
     }%>
 }
-/-/////////////////////////////// GLOBAL CALLBACKS
+///////////////////////////////// GLOBAL CALLBACKS
 struct GLOBAL{
     void: ListEditorHandleListClick(their GtkListBox: box, their GtkListBoxRow: row, their void: user_data) <- <% {
         ListWidgetManager *listMgr =(ListWidgetManager *)user_data;
@@ -583,49 +593,58 @@ struct GLOBAL{
         listMgr.handleEdit()
     }
 }
-/-///////////////////////////////  HANDLE EVENTS
-struct GUI_MotionEvent{
+/////////////////////////////////  HANDLE EVENTS
+struct GUI_MotionEvent: wraps = GdkEventMotion ownerMe = their{
   me uint: type
- /- GdkWindow *window;
- /- gint8 send_event;
- /- guint32 time;
+ // GdkWindow *window;
+ // gint8 send_event;
+ // guint32 time;
   me double: x
   me double: y
 
   me uint: state
   me uint: button
 }
-struct GUI_ButtonEvent{
+struct GUI_ButtonEvent: wraps = GdkEventButton ownerMe = their{
   me uint: type
- /- GdkWindow *window;
- /- gint8 send_event;
- /- guint32 time;
+ // GdkWindow *window;
+ // gint8 send_event;
+ // guint32 time;
   me double: x
   me double: y
   me uint: state
   me uint: button
 }
-struct GUI_PointerEvent{
+struct GUI_PointerEvent: wraps = GdkEventButton ownerMe = their{
   me uint: type
- /- GdkWindow *window;
- /- gint8 send_event;
- /- guint32 time;
+ // GdkWindow *window;
+ // gint8 send_event;
+ // guint32 time;
   me double: x
   me double: y
 
   me uint: state
   me uint: button
 }
-
-/-///////////////////////////////  EVENT DISPATCHER
+struct GUI_KeyboardEvent{
+    their GdkEventKey: GUI_KeyboardEvent
+    me uint: type
+    me uint: state
+    me uint: keyval
+}
+/////////////////////////////////  EVENT DISPATCHER
 struct GUI_eventDispatcher{
     their widget: topWidget
 
     me bool: dispatchPointerMotionEvent(their GdkEventMotion: event) <- <%{
+        event->x = event->x / scaleFactor;
+        event->y = event->y / scaleFactor;
         topWidget->mouseMoved(event);
         return false;
     } %>
     me bool: dispatchPointerClickEvent(their GdkEventButton: event) <- <%{
+        event->x = event->x / scaleFactor;
+        event->y = event->y / scaleFactor;
         if(event->type==GDK_BUTTON_PRESS){
             if(event->button==1){
                 topWidget->primaryDn(event);
@@ -642,30 +661,37 @@ struct GUI_eventDispatcher{
         }
         return false;
     } %>
-    me bool: dispatchKeyboardEvent(their GdkEventKey: event) <- {print("KEY PRESSED\n"); return(false)}
-  /-  me bool: dispatchWindowEvent(their GdkEventConfigure: event) <- {print("Config\n")}
-    /- Also: timer, data and user events
+    me bool: dispatchKeyboardEvent(their GdkEventKey: event) <- <%{
+        topWidget->keyTyped(event);
+        return(true);
+    }%>
+  //  me bool: dispatchWindowEvent(their GdkEventConfigure: event) <- {print("Config\n")}
+    // Also: timer, data and user events
 
     me void: registerWidgetForEventDispatcher(their GUI_item: Widget, their widget: masterWidget) <- <%{
         topWidget = masterWidget;
 
         g_signal_connect(Widget, "draw", G_CALLBACK(drawAppArea_cb), topWidget);
-/-      g_signal_connect (Widget, "expose_event",      G_CALLBACK(expose_event), topWidget);
-/-      g_signal_connect (Widget, "configure_event",   G_CALLBACK(configure_event), topWidget);
+//      g_signal_connect (Widget, "expose_event",      G_CALLBACK(expose_event), topWidget);
+//      g_signal_connect (Widget, "configure_event",   G_CALLBACK(configure_event), topWidget);
         g_signal_connect (Widget, "motion_notify_event", G_CALLBACK(motion_notify_event), topWidget);
         g_signal_connect (Widget, "button_press_event",  G_CALLBACK(button_press_event), topWidget);
         g_signal_connect (Widget, "button_release_event",  G_CALLBACK(button_release_event), topWidget);
+        g_signal_connect (window, "key_press_event",  G_CALLBACK(keypress_event), topWidget);
 
         gtk_widget_set_events (Widget, GDK_EXPOSURE_MASK
              | GDK_LEAVE_NOTIFY_MASK
              | GDK_BUTTON_PRESS_MASK
              | GDK_BUTTON_RELEASE_MASK
              | GDK_POINTER_MOTION_MASK
-             | GDK_POINTER_MOTION_HINT_MASK);
+             | GDK_POINTER_MOTION_HINT_MASK
+             | GDK_KEY_PRESS_MASK
+             | GDK_KEY_RELEASE_MASK
+        );
     } %>
 }
 
-/-///////////////////////////////  GLOBAL EVENT HANDLERS
+/////////////////////////////////  GLOBAL EVENT HANDLERS
 struct GLOBAL{
     me void: button_press_event(their GtkWidget: wid, their GdkEventButton: event, their void: data) <- <%{
         ((DashboardWidget*) data)->EventDispatcher.dispatchPointerClickEvent(event);
@@ -677,16 +703,17 @@ struct GLOBAL{
         ((DashboardWidget*) data)->EventDispatcher.dispatchPointerMotionEvent(event);
     } %>
     me void: expose_event(their GtkWidget: wid, their GdkEventExpose: event, their void: data) <- <%{
-      /-  ((DashboardWidget*) data)->EventDispatcher.dispatchWindowEvent(event);
+      //  ((DashboardWidget*) data)->EventDispatcher.dispatchWindowEvent(event);
     } %>
     me void: keypress_event(their GtkWidget: wid, their GdkEventKey: event, their void: data) <- <%{
         ((DashboardWidget*) data)->EventDispatcher.dispatchKeyboardEvent(event);
     } %>
     me void: configure_event(their GtkWidget: wid, their GdkEventConfigure: event, their void: data) <- <%{
-      /-  EventDispatcher.dispatchWindowEvent(event);
+      //  EventDispatcher.dispatchWindowEvent(event);
     } %>
     me bool: drawAppArea_cb(their GtkWidget: gtk_top_widget, their GUI_ctxt: cr, their void: data) <- <%{
         widget* DBW = (widget*)data;
+        cairo_scale(cr, scaleFactor, scaleFactor);
         DBW->draw(cr);
         return(true);
     }%>
@@ -698,20 +725,12 @@ struct GLOBAL{
     appComponentGUI* clickWidget = (appComponentGUI*)wid;
         clickWidget->clickNext();
     }%>
-    void: clickRemoveMed_CB(their GtkWidget: wid, their MedItemDataWidget: food) <- <%{
-    MedItemDataWidget* clickWidget = (MedItemDataWidget*)food;
-        clickWidget->clickRemoveMed();
-    }%>
-    void: clickAddMed_CB(their GtkWidget: wid, their MedBunchDataWidget: meal) <- <%{
-    MedBunchDataWidget* clickWidget = (MedBunchDataWidget*)meal;
-        clickWidget->clickAddMed();
-    }%>
 }
-/-///////////////////////////////  HANDLE GUI
-struct GUI_canvas{
+/////////////////////////////////  HANDLE GUI
+struct GUI_canvas: wraps = GtkWidget ownerMe = their{
     me void: setParent(our DashboardWidget: wid) <- <%!%G%>
 }
-/-///////////////////////////////  HANDLE GUI
+/////////////////////////////////  HANDLE GUI
 struct GUI{
     their GtkApplication: app
 
@@ -733,7 +752,6 @@ struct GUI{
 struct GUI{
     their GUI_item: newCanvas() <- <%!%Ggtk_drawing_area_new()%>
     me void: setWidgetSize(their GUI_item: widget, me uint32: width, me uint32: height) <- <%!%Ggtk_widget_set_size_request(%1, %2, %3)%>
-    their GUI_item: newScrollingWindow() <- <%!%Ggtk_scrolled_window_new(0, 0)%>
     me void: addMenuBar(me GUI_menuBar: menubar) <- <%!%G %>
     me void: create_MenuItem(me GUI_menu: ParentMenu, me string: label)<- <%!%Gcreate_MenuItem(%1, %2)%>
     me void: create_TopSubMenu(me GUI_menuBar: ParentMenu, me string: label)<- <%!%Gcreate_SubMenu(%1, %2)%>
@@ -741,11 +759,10 @@ struct GUI{
     me void: setCallback()     <- <%!%Gg_signal_connect(G_OBJECT(%1), %2, G_CALLBACK(%3), %4)%>
     me void: setBtnCallback()  <- <%!%Gg_signal_connect(G_OBJECT(%1), %2, G_CALLBACK(%3_CB), %4)%>
     me void: setBtnCallback2() <- <%!%Gg_signal_connect(G_OBJECT(%1), %2, G_CALLBACK(%3), %4.get())%>
-    me GUI_ctxt: newPDF_ctxt(me sting: filename, me double: inchesWide, me double: inchesHigh) <- <%!%Gcairo_create(cairo_pdf_surface_create(%1.data(), %2*70, %3*70))%>
+    me void: setBtnCallback3()  <- <%!%Gg_signal_connect(G_OBJECT(%1), %2, G_CALLBACK(%3_%4_CB), %5)%>
 }
 
-struct GUI_ctxt {
-    their cairo_t:GUI_ctxt
+struct GUI_ctxt: wraps = cairo_t ownerMe = their{
     me void: fetchAreaToBeDrawn(me GUI_rect: area) <- <%!cairo_clip_extents(%0, &%1.x1, &%1.y1, &%1.x2, &%1.y2)%>
     me void: reset() <- <%!%G %>
     me void: setRGBA(me double: red, me double: green, me double: blue, me double: alpha) <- <%!cairo_set_source_rgba(%0, (double)%1 /256, (double)%2 /256, (double)%3 /256, (double)%4 /256)%>
@@ -754,6 +771,7 @@ struct GUI_ctxt {
     me void: setLineWidth(me double: width) <- <%!cairo_set_line_width(%0, %1)%>
     me void: finishPDF() <- <%!cairo_surface_finish(cairo_get_group_target(%0))%>
     me void: setScale() <- <%!cairo_scale(%0, %1, %2)%>
+    me void: setOffset() <- <%!cairo_translate(%0, %1, %2)%>
     me void: moveTo(me double: x, me double: y) <- <%!cairo_move_to(%0, %1, %2)%>
     me void: lineTo(me double: x, me double: y) <- <%!cairo_line_to(%0, %1, %2)%>
     me void: moveRel(me double: dx, me double: dy) <- <%!cairo_rel_move_to(%0, %1, %2)%>
@@ -761,7 +779,7 @@ struct GUI_ctxt {
     me void: curveTo(me double: x1, me double: y1, me double: x2, me double: y2, me double: x3, me double: y3) <- <%!cairo_curve_to(%0, %1, %2, %3, %4, %5, %6)%>
     me void: curveRel(me double: dx1, me double: dy1, me double: dx2, me double: dy2, me double: dx3, me double: dy3) <- <%!cairo_rel_curve_to(%0, %1, %2, %3, %4, %5, %6)%>
     me void: closePath() <- <%!cairo_close_path(%0)%>
-    me void: rectangle(me double: leftX, me double: topY, me double: width, me double: height) <- <%!cairo_rectangle(%0, %1, %2, %3, %4)%>
+    me void: rectangle() <- <%!cairo_rectangle(%0, %1, %2, %3, %4)%>
     me void: paintNow() <- <%!cairo_paint(%0)%>
     me void: strokeNow() <- <%!cairo_stroke(%0)%>
     me void: fillNow() <- <%!cairo_fill(%0)%>
@@ -769,6 +787,7 @@ struct GUI_ctxt {
     me void: fillKeep() <- <%!cairo_fill_preserve(%0)%>
     me void: setFillPattern() <- <%!cairo_set_source(%0, %1)%>
     me void: circle(me int: centerX, me int: centerY, me int: radius) <- <%!cairo_arc(%0, %1, %2, %3, 0, 2 * M_PI)%>
+    their GUI_ctxt: newPDF_ctxt(me sting: filename, me double: inchesWide, me double: inchesHigh) <- <%!%Gcairo_create(cairo_pdf_surface_create(%1.data(), %2*70, %3*70))%>
 }
 
 struct guiFillPattern{
@@ -779,7 +798,7 @@ struct guiFillPattern{
     me void: destroy() <- <%!cairo_pattern_destroy(%0)%>
 }
 
-/-/////////////////////////////// TIME
+///////////////////////////////// TIME
 struct tm{
     me tm: tm
     me int: tm_hour
@@ -814,17 +833,18 @@ struct timeStringer{
     } %>
 }
 
-/-///////////////////////////////  G L O B A L
+/////////////////////////////////  G L O B A L
 struct GLOBAL{
     me APP: thisApp
     me float: displayDensity
+    me double: scaleFactor <- 1.0
 
-    /- //TIME ROUTINES:
+    // //TIME ROUTINES:
     me int64: ticksPerSec() <- <%!%GG_USEC_PER_SEC%>
     me int64: getCurrentTimeStamp() <- <%!g_get_real_time()/1000%>
 
-    /- //DRAWING ROUTINES:
-    me deltaSize: renderText(me GUI_ctxt: cr, me string: text, me fontSpec: font, me double: x, me double: y) <- <%{
+    // //DRAWING ROUTINES:
+    me deltaSize: renderText(their GUI_ctxt: cr, me string: text, me fontSpec: font, me double: x, me double: y) <- <%{
         cairo_move_to(cr,x,y);
         PangoLayout *layout=pango_cairo_create_layout(cr);
         pango_layout_set_text(layout, text.data(), -1);
@@ -837,7 +857,7 @@ struct GLOBAL{
         cairo_set_line_width(cr, 0.5);
         pango_cairo_update_layout(cr, layout);
         pango_cairo_show_layout_line (cr, pango_layout_get_line (layout, 0));
-       /- pango_cairo_layout_path(cr, layout);
+       // pango_cairo_layout_path(cr, layout);
         deltaSize size;
         pango_layout_get_pixel_size(layout, &size.width, &size.height);
         g_object_unref(layout);
@@ -845,13 +865,13 @@ struct GLOBAL{
         return(size);
     }%>
 
-    me deltaSize: renderTextCentered(me GUI_ctxt: cr, me string: text, me fontSpec: font, me double: x, me double: y) <- <%{
+    me deltaSize: renderTextCentered(their GUI_ctxt: cr, me string: text, me fontSpec: font, me double: x, me double: y) <- <%{
         deltaSize size = getTextSize(cr, text, font);
-    renderText(cr, text, font, x-size.width/2, y);
+        renderText(cr, text, font, x-size.width/2, y);
         return(size);
     }%>
 
-    me deltaSize: renderTextRotate(me GUI_ctxt: cr, me string: text, me fontSpec: font, me double: x, me double: y, me double: degrees, me string: justify) <- <%{
+    me deltaSize: renderTextRotate(their GUI_ctxt: cr, me string: text, me fontSpec: font, me double: x, me double: y, me double: degrees, me string: justify) <- <%{
         double radians    = degrees*(M_PI/180.);
         deltaSize size    = getTextSize(cr, text, font);
         double hypotenuse = size.width;
@@ -874,7 +894,7 @@ struct GLOBAL{
         return(tmpSize);
     }%>
 
-    me void: rotate(me GUI_ctxt: cr, me double: x, me double: y, me int: degrees) <- <%{
+    me void: rotate(their GUI_ctxt: cr, me double: x, me double: y, me int: degrees) <- <%{
     double radians = degrees*(M_PI/180.);
     cairo_save(cr);
     cairo_translate(cr,x,y);
@@ -884,7 +904,7 @@ struct GLOBAL{
 
     me void: restore() <- <%!cairo_restore(cr)%>
 
-    me deltaSize: getTextSize(me GUI_ctxt: cr, me string: text, me fontSpec: font) <- <%{
+    me deltaSize: getTextSize(their GUI_ctxt: cr, me string: text, me fontSpec: font) <- <%{
         PangoLayout *layout=pango_cairo_create_layout(cr);
         pango_layout_set_text(layout, text.data(), -1);
 
@@ -899,20 +919,20 @@ struct GLOBAL{
         return(size);
     } %>
 
-    me void: roundedRectangle(me GUI_ctxt: cr, me double: x, me double: y, me double: w, me double: h, me double: r) <- <%{
-        cairo_move_to(cr,x+r,y);                      /-# Move to A
-        cairo_line_to(cr,x+w-r,y);                    /-# Straight line to B
-        cairo_curve_to(cr,x+w,y,x+w,y,x+w,y+r);       /-# Curve to C, Control points are both at Q
-        cairo_line_to(cr,x+w,y+h-r);                  /-# Move to D
-        cairo_curve_to(cr,x+w,y+h,x+w,y+h,x+w-r,y+h); /-# Curve to E
-        cairo_line_to(cr,x+r,y+h);                    /-# Line to F
-        cairo_curve_to(cr,x,y+h,x,y+h,x,y+h-r);       /-# Curve to G
-        cairo_line_to(cr,x,y+r);                      /-# Line to H
-        cairo_curve_to(cr,x,y,x,y,x+r,y);             /-# Curve to A;
+    me void: roundedRectangle(their GUI_ctxt: cr, me double: x, me double: y, me double: w, me double: h, me double: r) <- <%{
+        cairo_move_to(cr,x+r,y);                      //# Move to A
+        cairo_line_to(cr,x+w-r,y);                    //# Straight line to B
+        cairo_curve_to(cr,x+w,y,x+w,y,x+w,y+r);       //# Curve to C, Control points are both at Q
+        cairo_line_to(cr,x+w,y+h-r);                  //# Move to D
+        cairo_curve_to(cr,x+w,y+h,x+w,y+h,x+w-r,y+h); //# Curve to E
+        cairo_line_to(cr,x+r,y+h);                    //# Line to F
+        cairo_curve_to(cr,x,y+h,x,y+h,x,y+h-r);       //# Curve to G
+        cairo_line_to(cr,x,y+r);                      //# Line to H
+        cairo_curve_to(cr,x,y,x,y,x+r,y);             //# Curve to A;
     } %>
 
     me INK_Image[map string]: InkImgCache
-    me void: displayImage(me GUI_ctxt: cr, me string: filename, me double: x, me double: y, me double: scale) <- <%{
+    me void: displayImage(their GUI_ctxt: cr, me string: filename, me double: x, me double: y, me double: scale) <- <%{
         filename = "./assets/" + filename;
         map< string, cairo_surface_t* >::iterator picPtr=InkImgCache.find(filename);
         cairo_surface_t* pic=0;
@@ -928,7 +948,7 @@ struct GLOBAL{
         cairo_paint(cr);
         cairo_restore(cr);
    }%>
-    /- //GUI INTERFACE:
+    // //GUI INTERFACE:
     /* Surface to store current scribbles */
     their cairo_surface_t: surface <- 0
 
@@ -939,12 +959,12 @@ me void: close_window() <- <%{
   g_application_quit((GApplication*)thisApp.gui->app);
 }%>
 
-    /- //MENU ROUTINES:
+    // //MENU ROUTINES:
 me GUI_menuItem: create_MenuItem(me GUI_menu: ParentMenu, me string: label) <- <%{
     GtkWidget *menuitem;
 
     menuitem = gtk_menu_item_new_with_label (label.data());
-    /-gtk_menu_item_set_submenu (GTK_MENU_ITEM (menuitem), SubMenu);
+    //gtk_menu_item_set_submenu (GTK_MENU_ITEM (menuitem), SubMenu);
     gtk_menu_shell_append (GTK_MENU_SHELL (ParentMenu), menuitem);
     gtk_widget_show (menuitem);
 
@@ -968,7 +988,7 @@ me void: getMetrics() <- <%{
 me void: showWidget(me GUI_item: widget) <-  <%!gtk_widget_show(GTK_WIDGET(%1))%>
 me void: hideWidget(their GUI_item: widget) <- <%!gtk_widget_hide(GTK_WIDGET(%1))%>
 me void: markDirtyArea(me GUI_item: widget, me int32: x, me int32: y, me int32: width, me int32: height) <- <%!gtk_widget_queue_draw_area(%1, %2, %3, %4, %5)%>
-/-me GUI_item: newCanvas() <- <%!gtk_drawing_area_new()%>
+//me GUI_item: newCanvas() <- <%!gtk_drawing_area_new()%>
 me void: setWidgetSize(me GUI_item: widget, me uint32: width, me uint32: height) <- <%!gtk_widget_set_size_request(%1, %2, %3)%>
 me int: widgetHeight() <- <%!gtk_widget_get_allocated_height(%1)%>
 me int: widgetWidth() <- <%!gtk_widget_get_allocated_width(%1)%>
@@ -976,11 +996,12 @@ me void: addToContainer(me GUI_container: container, me GUI_item: widget) <- <%!
 me void: addToContainerAndExpand(me GUI_container: container, their GUI_item: widget) <-<%!%Ggtk_box_pack_start(GTK_BOX(%1), %2, TRUE, TRUE, 0)%>
 me void: addToZStack(me GUI_container: container, their GUI_item: widget) <-<%!%Ggtk_stack_add_named(GTK_STACK(%1), %2, %3)%>
 me void: setZStackActive(their GUI_item: widget, me string: S) <- <%!%Ggtk_stack_set_visible_child_name(GTK_STACK(%1), %2.data())%>
+their GUI_item: newScrollingWindow() <- <%!%Ggtk_scrolled_window_new(NULL, NULL)%>
 }
 
-/-///////////////////////////////  INTER-THREAD COMMUNICATION
+/////////////////////////////////  INTER-THREAD COMMUNICATION
 
-/- Initialization: get main thread's "mainContext" and store it and make a global getter for it.
+// Initialization: get main thread's "mainContext" and store it and make a global getter for it.
 struct MessagePasser {their GMainContext: MessagePasser}
 
 struct workerMsgThread: inherits = Threads {
@@ -1004,15 +1025,15 @@ struct workerMsgThread: inherits = Threads {
 }
 
 struct GLOBAL{
-    their MessagePasser: GUI_threads_messagePasser <- NULL   /- Set this at beginning of the program
-    their MessagePasser: workerThreadMessagePasser <- NULL   /- Set this at beginning of the program
+    their MessagePasser: GUI_threads_messagePasser <- NULL   // Set this at beginning of the program
+    their MessagePasser: workerThreadMessagePasser <- NULL   // Set this at beginning of the program
     their MessagePasser: threadsMesgPasser() <- <%!g_main_context_get_thread_default()%>
     their MessagePasser: GUIsMesgPasser() <- <%!GUI_threads_messagePasser%>
     void: invokeFunctionInThread(their MessagePasser: mesgPasser, their void: objToCall, their void: classToCall, their void: funcToCall, their void: arguments)
         <- <%!g_main_context_invoke(%1, GSourceFunc(%3_%4_CB), %5)%>
 }
 
-/--------------- Application areas
+///////// Application areas
 struct GLOBAL {
 their GtkWidget: window
 
@@ -1029,7 +1050,7 @@ me void: activate(their GtkApplication: app, me gpointer: user_data) <- <%{
     topBox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add (GTK_CONTAINER (window), topBox);
     gtk_widget_show (topBox);
-    /-//////////////////  A d d  A p p l i c a t i o n   M e n u
+    ////////////////////  A d d  A p p l i c a t i o n   M e n u
 
     GtkWidget *boxForMenubar;
     GtkWidget *menubar;
@@ -1045,7 +1066,7 @@ me void: activate(their GtkApplication: app, me gpointer: user_data) <- <%{
 
     thisApp.createAppMenu(menubar);
 
-      /-///////////////////  A d d   A p p l i c a t i o n   I t e m s
+      /////////////////////  A d d   A p p l i c a t i o n   I t e m s
 
     GtkWidget *frame;
     GtkWidget *appArea;
@@ -1053,11 +1074,11 @@ me void: activate(their GtkApplication: app, me gpointer: user_data) <- <%{
     frame = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(topBox), frame, TRUE, TRUE, 0);
 
-    /-EventDispatcher.registerWidgetForEventDispatcher();
+    //EventDispatcher.registerWidgetForEventDispatcher();
     thisApp.createAppArea(frame);
 
 
-    /-///////////////////  A d d  S t a t u s   A r e a
+    /////////////////////  A d d  S t a t u s   A r e a
 
 
 

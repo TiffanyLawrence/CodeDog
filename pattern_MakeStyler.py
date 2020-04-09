@@ -14,7 +14,7 @@ styler.highlight2Color
 styler.highlight3Color
 
 styler.setCustomColor(me string: ID, me cdColor: C)
-styler.color(me string: ID)
+styler.color(me string: ID, me cdColor: default)
 
 styler.titleFont
 styler.normalFont
@@ -49,7 +49,7 @@ Examples:
 mainStyle = {
     colors = {
         frGndColor = sysDefaultFrGndColor
-        bkGndColor = [45, 100, 220]   /- RGB
+        //bkGndColor = [0, 0, 0]   // RGB
         highlight1Color = LightGreen
 
         MySpecialColor = SlateBlue
@@ -89,7 +89,7 @@ def stringifyList(theList):
     S=''
     count=0
     for item in theList:
-        if not(isinstance(item, basestring)):cdErr("List item not basesring")
+        if not(isinstance(item, str)):cdErr("List item not basesring")
         if count >0: S = S+', '
         S = S + item
         count = count +1
@@ -99,7 +99,7 @@ def processStylerMap(stylerTags, varOwner, varType, setFunc, defaultVars):
     S=''
     for varName in stylerTags:
         varValue = stylerTags[varName]
-        if isinstance(varValue, basestring):
+        if isinstance(varValue, str):
             RHS=' <- '+varValue
         elif isinstance(varValue, list):
             RHS=stringifyList(varValue)
@@ -138,17 +138,17 @@ def processStyler(stylerTagValue):
             defaultVars = []
             RHS      = ' <- '+ stylerTagValue[tag]
         else:
-            print '    tag not found'
+            print('    tag not found')
 
         if isinstance(stylerTagValue[tag], dict):
             S = S + processStylerMap(stylerTagValue[tag], varOwner, varType, setFunc, defaultVars)
-        elif isinstance(stylerTagValue[tag], basestring):
+        elif isinstance(stylerTagValue[tag], str):
             S = S + '        ' + varType + RHS +'\n'
-        else: print"!!!!!!!!!!!!!!!!!!styler not map or basestring", stylerTagValue[tag]
+        else: print("!!!!!!!!!!!!!!!!!!styler not map or basestring", stylerTagValue[tag])
     return S
 
 def apply(classes, tags, stylerTagName):
-    if not(isinstance(stylerTagName,basestring)):
+    if not(isinstance(stylerTagName,str)):
         cdErr("Styler tag name must be a string")
     stylerTagValue = progSpec.fetchTagValue(tags, stylerTagName)
     initCode = processStyler(stylerTagValue)
@@ -160,27 +160,44 @@ struct GLOBAL{
 }
 struct Styler{
     our cdColor[map string]: userColors
-    me cdColor:  frGndColor      <- White
-    me cdColor:  bkGndColor      <- Black
-    me cdColor:  highlight1Color <- White
+    me cdColor:  frGndColor      <- Black
+    me cdColor:  bkGndColor      <- White
+    me cdColor:  highlight1Color <- Black
     me cdColor:  highlight2Color <- Cornflower
     me cdColor:  highlight3Color <- OrangeRed
+    me cdColor:  primaryTextColor <- Black
+    me cdColor:  data1Color <- Cornflower
+    me cdColor:  data2Color <- Turquoise
+    me cdColor:  data3Color <- Magenta
+    me cdColor:  data4Color <- MediumVioletRed
+    me cdColor:  data5Color <- OrangeRed
+    me cdColor:  data6Color <- Gold
 
-        our fontSpec:: fontDefault <- ("Ariel", 10, 0)
-        our fontSpec:: fontTitle <- ("Ariel", 16, 0)
-        our fontSpec:: fontSmall <- ("Ariel", 8, 0)
-        our fontSpec:: fontVerySmall <- ("Ariel", 5, 0)
+
+    our fontSpec:: fontDefault{"Ariel", 10, 0}
+    our fontSpec:: fontTitle{"Ariel", 16, 0}
+    our fontSpec:: fontSmall{"Ariel", 8, 0}
+    our fontSpec: fontVerySmall
+    our fontSpec: fontLabelWidgetAndroid
+    our fontSpec: fontEntryWidgetAndroid
+    our fontSpec: fontTitleAndroid
+    our fontSpec: fontTextAndroid
 
     void: setCustomColor(me string: ID, me cdColor: color) <- {
         our cdColor:: tmpColor <- color
         userColors.insert(ID, tmpColor)
     }
-    me cdColor: color(me string: ID) <- {
-        return(userColors.get(ID))
+    me cdColor: color(me string: ID, me cdColor: defaultColor) <- {
+        our cdColor[itr map string]: colorItr <- userColors.find(ID)
+        if(colorItr == userColors.end()){
+            return(defaultColor)
+        }else{
+            return(colorItr.val)
+        }
     }
 
 
-    /- FONT NAMES
+    // FONT NAMES
     me string[map string]: userFontNames
     me string: titleFont
     me string: normalFont
@@ -201,7 +218,7 @@ struct Styler{
     }
     me string: font(me string: ID) <- {return(userFontNames.get(ID))}
 
-    /- FONT SIZES
+    // FONT SIZES
     me int[map string]: userFontSizes
     me int: fontSizeVerySmall
     me int: fontSizeSmall
@@ -216,7 +233,7 @@ struct Styler{
         return(userFontSizes.get(ID))
     }
 
-    /- FONT SIZE MODES
+    // FONT SIZE MODES
     me mode[pp, dp, sp]: pixelMode <- pp
 
     me int: widgetLabelBoxWidth <- 100
@@ -228,6 +245,10 @@ struct Styler{
         Allocate(fontTitle, "ariel", "20")
         Allocate(fontSmall, "ariel", "10")
         Allocate(fontVerySmall, "ariel", "5")
+        Allocate(fontLabelWidgetAndroid, "ariel", "25")
+        Allocate(fontEntryWidgetAndroid, "ariel", "25")
+        Allocate(fontTitleAndroid, "ariel", "25")
+        Allocate(fontTextAndroid, "ariel", "20")
     }
 
 

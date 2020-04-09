@@ -1,15 +1,15 @@
-/- CodeDog GUI DashBoard
+// CodeDog GUI DashBoard
 
-/- Widgets for constructing a dashboard
+// Widgets for constructing a dashboard
 
 featuresNeeded = [GUI_ToolKit]
 
 
 struct dash: inherits=widget{
     me string: title
-    me GUI_Scalar: extX        /- Dashes right-most extent
-    me GUI_Scalar: extY        /- Dashes lowest extent
-    me GUI_Scalar: extC        /- The current position where the next external item should be drawn
+    me GUI_Scalar: extX        // Dashes right-most extent
+    me GUI_Scalar: extY        // Dashes lowest extent
+    me GUI_Scalar: extC        // The current position where the next external item should be drawn
     their dash: dashParent
     me bool: isNullLike
     me bool: posIsSet
@@ -39,10 +39,10 @@ struct Dashboard: inherits=dash{
     our dash[list]: dashChildren
     their dash[map string]: dependentItems
     our decor[list]: decorations
-
     mode[accomodateParent, accomodateContent]: sizingMode
     mode[singleDash, verticalStack, userArranges]: layoutMode
     their GUI_canvas: canvas
+    their GUI_ctxt: myGUI_ctxt
 
     their dash: dependentIsRegistered(me string: key) <- {
         if(dependentItems.containsKey(key)){
@@ -53,7 +53,7 @@ struct Dashboard: inherits=dash{
 
     me void: addChild(our dash: child) <- {child.dashParent<-self; dashChildren.pushLast(child)}
 
-    me void: addDependent(me string: key, their dash: dashPtr) <- {
+    void: addDependent(me string: key, their dash: dashPtr) <- {
         if(! dependentItems.containsKey(key)){
             dashPtr.isHidden <- true
             dependentItems[key] <- dashPtr
@@ -67,7 +67,7 @@ struct Dashboard: inherits=dash{
         me GUI_Scalar: largeToX <- to.posX + to.width
         me GUI_Scalar: smallToY <- to.posY
         me GUI_Scalar: largeToY <- to.posY + to.height
-        our arrow: Arrow <- (fromX, fromY, intersectPoint(fromX, smallToX, largeToX), intersectPoint(fromY, smallToY, largeToY))
+        our arrow: Arrow {fromX, fromY, intersectPoint(fromX, smallToX, largeToX), intersectPoint(fromY, smallToY, largeToY)}
         decorations.pushLast(Arrow)
     }
 
@@ -129,8 +129,6 @@ struct Dashboard: inherits=dash{
                 Dash.primaryDn(event)
             }
         }
-        setPos(15, 15, 35)
-        requestRedraw()
         return(true)
     }
 
@@ -146,8 +144,6 @@ struct Dashboard: inherits=dash{
                 Dash.primaryUp(event)
             }
         }
-        setPos(15, 15, 35)
-        requestRedraw()
         return(true)
     }
 
@@ -163,26 +159,24 @@ struct Dashboard: inherits=dash{
                 Dash.mouseMoved(event)
             }
         }
-        setPos(15, 15, 35)
-        requestRedraw()
         return(true)
     }
 
     me void: drawToPDF(me string: filename, me double: inchesWide, me double: inchesHigh, me double: scale) <- {
-  /*      me GUI_ctxt: PDF <- gui_tk.newPDF_ctxt(filename, inchesWide, inchesHigh)
+        their GUI_ctxt: PDF <- myGUI_ctxt.newPDF_ctxt(filename, inchesWide, inchesHigh)
         PDF.setScale(scale, scale)
         draw(PDF)
-        PDF.finishPDF()*/
+        PDF.finishPDF()
     }
 
-    /-me bool: secondaryClick(their GUI_ButtonEvent: event) <- {print("RIGHT BUTTON!\n"); drawToPDF('infonView.pdf', 11.0, 8.5, 0.4); return(true)}
+    //me bool: secondaryClick(their GUI_ButtonEvent: event) <- {print("RIGHT BUTTON!\n"); drawToPDF('infonView.pdf', 11.0, 8.5, 0.4); return(true)}
 
     void: init(me string: label) <- {
-    title <- label+".Dashboard"
-    isHidden <- false
+        title <- label+".Dashboard"
+        isHidden <- false
     }
 
-    void: update() <- {}
+    void: update() <- {log("base::update")}
 
     void: setPos(me GUI_Scalar:x, me GUI_Scalar:y, me GUI_Scalar: extCursor) <- {
         me GUI_Scalar: YCursor <- y
@@ -190,7 +184,7 @@ struct Dashboard: inherits=dash{
         width <- 10
         height <- 10
         withEach Dash in dependentItems{
-            Dash.isHidden<-false
+            Dash.isHidden<-true
             Dash.posIsSet<-false
         }
         withEach Dash in dashChildren{
@@ -209,23 +203,33 @@ struct Dashboard: inherits=dash{
         width <- width +30
         height <- height +30
     }
-    /- TODO: Support other layouts: verticalStack and userArranges
+    // TODO: Support other layouts: verticalStack and userArranges
     void: layoutChildDashes() <- {
-        if(sizingMode==accomodateContent){return()}
+        me GUI_Scalar: verticalOffset   <- 0
+        me GUI_Scalar: horizontalOffset <- 0
+        if(sizingMode==accomodateContent){}
         if(layoutMode==singleDash){
             dashChildren[0].width <- widgetWidth(canvas)
             dashChildren[0].height <- widgetHeight(canvas)
-        } else if(layoutMode==verticalStack){
-        } else if(layoutMode==userArranges){
+        }else if(layoutMode==verticalStack){
+            verticalOffset <- 15
+            withEach childDash in dashChildren{
+                childDash.setPos(15, verticalOffset, 0)
+                verticalOffset <- childDash.extY+ 10
+                horizontalOffset <- max(horizontalOffset, childDash.extX)
+            }
+        }else if(layoutMode==userArranges){
         }
+        thisApp.gui.setWidgetSize(canvas,max(horizontalOffset, widgetWidth(window)),max(verticalOffset, widgetHeight(window)))
     }
 
-    void: draw(me GUI_ctxt: cr) <- {
+    void: draw(their GUI_ctxt: cr) <- {
+        myGUI_ctxt <- cr
         if (isHidden){return()}
         layoutChildDashes()
         me cdColor: bkCol <- styler.bkGndColor
         me cdColor: fgCol <- styler.frGndColor
-        /-displayImage(cr, "blue-sky.png", 0, 0, 1.0)
+        //displayImage(cr, "blue-sky.png", 0, 0, 1.0)
         cr.setColor(bkCol)
         cr.paintNow()
 
@@ -256,19 +260,19 @@ struct dataField: inherits=dash{
 
    void: setPos(me GUI_Scalar:x, me GUI_Scalar:y, me GUI_Scalar: extCursor) <- {
         posIsSet <- true
-        posX <- x;
-        posY <- y;
-        extC <- extCursor
+        posX   <- x
+        posY   <- y
+        extC   <- extCursor
         height <- 15
-        width <- 180
-        extX <- posX+width
-        extY <- posY+height
+        width  <- 180
+        extX   <- posX+width
+        extY   <- posY+height
     }
 
-    void: draw(me GUI_ctxt: cr) <- {
+    void: draw(their GUI_ctxt: cr) <- {
         if (isHidden){return()}
-        renderText(cr, label, styler.fontDefault, posX, posY+15)
-        renderText(cr, value, styler.fontDefault, posX+midPos, posY+15)
+        renderText(cr, label, styler.fontSmall, posX, posY+15)
+        renderText(cr, value, styler.fontSmall, posX+midPos, posY+15)
     }
 }
 
@@ -307,7 +311,7 @@ struct ptrToItem: inherits=dash{
         return(true)
     }
 
-    void: draw(me GUI_ctxt: cr) <- {
+    void: draw(their GUI_ctxt: cr) <- {
         if (isHidden){return()}
         header.isHidden <- false
         header.draw(cr)
@@ -350,6 +354,7 @@ struct listOfItems: inherits=dash{
                 x <- x+8
                 withEach element in elements{
                     element.dashParent <- self
+                    element.isHidden <- false
                     element.setPos(x,y,extC)
                     y <- y+element.height
                     width <- max(width, element.width+8)
@@ -358,7 +363,7 @@ struct listOfItems: inherits=dash{
                 }
                 height <- y-posY
             } else if(orientation==horizontal){
-                me GUI_Scalar: listX <- posX + header.width+30    /- This 30 should really be calculated to compensate for nested items. Actual distance should be 40.
+                me GUI_Scalar: listX <- posX + header.width+30    // This 30 should really be calculated to compensate for nested items. Actual distance should be 40.
                 me GUI_Scalar: listY <- extC
                 me GUI_Scalar: listC <- extC+40;
                 withEach element in elements{
@@ -391,7 +396,7 @@ struct listOfItems: inherits=dash{
         return(true)
     }
 
-    void: draw(me GUI_ctxt: cr) <- {
+    void: draw(their GUI_ctxt: cr) <- {
         if (isHidden){return()}
         header.isHidden <- false
         header.draw(cr)
@@ -421,7 +426,7 @@ struct DashboardWidget: inherits=dash{
     their GUI_canvas: managedWidget
     me GUI_eventDispatcher: EventDispatcher
     void: requestRedraw() <- {
-    markDirtyArea(canvas, 0,0, widgetWidth(canvas), widgetHeight(canvas))
+        markDirtyArea(canvas, 0,0, widgetWidth(canvas), widgetHeight(canvas))
     }
     their GUI_canvas: init(me string: label) <- {
         title   <- 'DashboardWidget.'+label
@@ -430,17 +435,29 @@ struct DashboardWidget: inherits=dash{
         dashboardDBW.dashParent <- self
         dashboardDBW.canvas <- canvas
         thisApp.gui.setWidgetSize(canvas, 310, 220)
-        /-    their scrollerWidget:: scrollView  <- ()
-        /-    their GUI_ScrollingWindow: scrollerFrame <- scrollView.makeScrollerWidget(canvas)
-        /-    managedWidget <- scrollerFrame
-        /-    managedWidget <- makeYStack("")
-        /-    addToContainer(managedWidget, canvas)
+        //    their scrollerWidget:: scrollView  <- ()
+        //    their GUI_ScrollingWindow: scrollerFrame <- scrollView.makeScrollerWidget(canvas)
+        //    managedWidget <- scrollerFrame
+        //    managedWidget <- makeYStack("")
+        //    addToContainer(managedWidget, canvas)
         managedWidget <- canvas
         EventDispatcher.registerWidgetForEventDispatcher(canvas, self)
         return(managedWidget)
     }
-    void: draw(me GUI_ctxt: cr) <- {
+    void: draw(their GUI_ctxt: cr) <- {
         dashboardDBW.draw(cr)
+    }
+    me bool: primaryClick(their GUI_ButtonEvent: event) <- {
+        dashboardDBW.primaryClick(event)
+        return(true)
+    }
+    me bool: primaryUp(their GUI_ButtonEvent: event) <- {
+        dashboardDBW.primaryUp(event)
+        return(true)
+    }
+    me bool: primaryDn(their GUI_ButtonEvent: event) <- {
+        dashboardDBW.primaryDn(event)
+        return(true)
     }
     void: INIT() <- {Allocate(dashboardDBW)}
 }
